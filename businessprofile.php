@@ -176,22 +176,19 @@ if($rrr=mysqli_fetch_array($result3))
     $pdf->SetXY(96,155);
     $pdf->SetFont('Times','',14);
     $pdf->Cell(30,5,$rrr['yexp'],0,0,'C');
-    $pdf->SetXY(106,155);
+    $pdf->SetXY(104,155);
     $pdf->SetFont('Times','',14);
     $pdf->Cell(30,5,'years',0,0,'C');
-    $pdf->SetXY(65,175);
-    $pdf->SetFont('Times','B',15);
-    $pdf->Cell(30,5,'Months Experience: ',0,0,'C');
-    $pdf->SetXY(90,175);
+    $pdf->SetXY(115,155);
     $pdf->SetFont('Times','',14);
     $pdf->Cell(30,5,$rrr['mexp'],0,0,'C');
-    $pdf->SetXY(100,175);
+    $pdf->SetXY(124,155);
     $pdf->SetFont('Times','',14);
     $pdf->Cell(30,5,'months',0,0,'C');
-    $pdf->SetXY(62,195);
+    $pdf->SetXY(60,175);
     $pdf->SetFont('Times','B',15);
     $pdf->Cell(30,5,'Owner Money: ',0,0,'C');
-    $pdf->SetXY(93,195);
+    $pdf->SetXY(91,175);
     $pdf->SetFont('Times','',14);
     $pdf->Cell(30,5,$rrr['prefcur']." ".$rrr['omoney'],0,0,'C');
 }
