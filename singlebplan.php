@@ -11,6 +11,31 @@ class PDF extends FPDF
     {
         $this->Image('profilebusiness.png',0,0,210,297);
     }
+    function Footer()
+    {
+        $conn=mysqli_connect("localhost","root","","businessplan");
+        $sql="SELECT * FROM bplan WHERE cEmailid='vsh@gmail.com'";
+        $result=mysqli_query($conn,$sql);
+        $row=mysqli_fetch_array($result);
+        $this->SetXY(10,250);
+        $this->SetFont('Times','I',12);
+        $this->Cell(30,20,"Owner Name: ",0,0);
+        $this->SetXY(35,250);
+        $this->SetFont('Times','I',12);
+        $this->Cell(30,20,$row['oname'],0,0);
+        $this->SetXY(10,257);
+        $this->Cell(30,20,"Contact Number: ",0,0);
+        $this->SetXY(40,257);
+        $this->Cell(30,20,$row['cNumber'],0,0);
+        $this->SetXY(10,264);
+        $this->Cell(30,20,"Email Id: ",0,0);
+        $this->SetXY(27,264);
+        $this->Cell(30,20,$row['cEmailid'],0,0);
+        $this->SetXY(10,272);
+        $this->Cell(30,20,"Location: ",0,0);
+        $this->SetXY(28,272);
+        $this->Cell(30,20,$row['cLocation'],0,0);
+    }
 	function PieChart($w, $h, $data, $format, $colors=null)//(100,35)
 	{
 		$this->SetFont('Courier', '', 10);
@@ -344,10 +369,6 @@ $pdf->SetXY(8,18);
 $pdf->SetTextColor(0,0,0);
 $pdf->SetFont('Times','BI',18);
 $pdf->Cell(130,20,$row['cName'],0,0);
-$pdf->SetXY(15,25);
-$pdf->SetTextColor(0,0,0);
-$pdf->SetFont('Times','BI',13);
-$pdf->Cell(130,20,$row['oname'].' , '.$row['cNumber'].' , '.$row['cEmailid'],0,0);
 $pdf->SetXY(60,18);
 $pdf->SetTextColor(0,0,0);
 $pdf->SetFont('Times','I',13);
@@ -386,56 +407,45 @@ $pdf->SetDash(2,2);
 $pdf->Line(10,85,200,85);
 $pdf->SetXY(10,83);
 $pdf->SetFont('Times','BI',17);
-$pdf->Cell(30,20,'Company Milestone',0,0);
-$pdf->SetFont('Times','I',12);
-$mname=json_decode($row['mname']); $y=96;
-for($i=0;$i<count($mname);$i++)
-{
-    $pdf->SetXY(15,$y);
-    $pdf->MultiCell(25,10,$mname[$i],0,1);
-    $y+=8;
-}
-$pdf->SetXY(80,83);
-$pdf->SetFont('Times','BI',17);
 $pdf->Cell(30,20,'Target Market',0,0);
 $pdf->SetFont('Times','I',12);
-$tar=json_decode($row['tar']); $y=96;
+$tar=json_decode($row['tar']); $x=6;
 for($i=0;$i<count($tar);$i++)
 {
-    $pdf->SetXY(84,$y);
+    $pdf->SetXY($x,96);
     $pdf->MultiCell(35,10,$tar[$i],0,1);
-    $y+=8;
+    $x+=28;
 }
 $pdf->SetXY(143,83);
 $pdf->SetFont('Times','BI',17);
 $pdf->Cell(30,20,'Competitors',0,0);
 $pdf->SetFont('Times','I',12);
-$scname=json_decode($row['swotcname']);  $y=96;
+$scname=json_decode($row['swotcname']);  $x=119;
 for($i=0;$i<count($scname);$i++)
 {
-    $pdf->SetXY(147,$y);
+    $pdf->SetXY($x,96);
     $pdf->MultiCell(25,10,$scname[$i],0,1);
-    $y+=8;
+    $x+=25;
 }
 $pdf->SetLineWidth(0.1);
 $pdf->SetDash(2,2); 
-$pdf->Line(10,133,200,133);
-$pdf->SetXY(80,130);
+$pdf->Line(10,113,200,113);
+$pdf->SetXY(80,108);
 $pdf->SetFont('Times','BI',18);
 $pdf->Cell(30,20,'Funding',0,0);
-$val=number_format(300000,2);
-$pdf->SetXY(25,146);
+$val=number_format(300000,2);//funding value
+$pdf->SetXY(25,123);
 $pdf->SetLineWidth(0.1);
 $pdf->SetDash(10,5); 
 $pdf->SetFont('Times','I',28);
 $pdf->Cell(150,20,'   Funding Needed Rs.'.$val,1,0,'L');
 $pdf->SetLineWidth(0.1);
 $pdf->SetDash(2,2); 
-$pdf->Line(10,170,200,170);
-$pdf->SetXY(64,167);
+$pdf->Line(10,150,200,150);
+$pdf->SetXY(64,148);
 $pdf->SetFont('Times','BI',18);
 $pdf->Cell(30,20,'Financial Projections',0,0);
-$pdf->SetXY(14,177);
+$pdf->SetXY(14,160);
 $pdf->SetFont('Times','BI',15);
 $pdf->Cell(30,20,'Sales Online (in %)',0,0);
 $sql1="SELECT * FROM sales WHERE bemail='demo@gmail.com'";
@@ -450,7 +460,7 @@ for($i=0;$i<count($salesoln);$i++)
 }
 $valX = round($pdf->GetX());
 $valY = round($pdf->GetY());
-$pdf->SetXY(60,160);
+$pdf->SetXY(60,140);
 $col[0]=array(100,100,255);
 $col[1]=array(255,100,100);
 $col[2]=array(255,255,100);
@@ -465,7 +475,7 @@ $col[10]=array(255,195,18);
 $col[11]=array(87,88,187);
 $pdf->PieChart(160,160, $data1, '%l (%p)', $col);
 $pdf->SetXY($valX, $valY + 10);
-$pdf->SetXY(144,177);
+$pdf->SetXY(144,160);
 $pdf->SetFont('Times','BI',15);
 $pdf->Cell(30,20,'Sales Offline (in %)',0,0);
 $salesofn=json_decode($row1['salesofn']);
@@ -477,7 +487,7 @@ for($i=0;$i<count($salesofn);$i++)
 }
 $valX = round($pdf->GetX());
 $valY = round($pdf->GetY());
-$pdf->SetXY(190,160);
+$pdf->SetXY(190,140);
 $col[0]=array(100,100,255);
 $col[1]=array(255,100,100);
 $col[2]=array(255,255,100);
@@ -496,8 +506,5 @@ $pdf->SetLineWidth(1.5);
 $pdf->SetAlpha(0.2);
 $pdf->RotatedImage('bekreta.png',60,160,100,50,55);
 $pdf->SetAlpha(1);
-$pdf->SetLineWidth(0.1);
-$pdf->SetDash(2,2); 
-$pdf->Line(115,52,115,85);
 $pdf->Output('I','Business Plan');
 ?>
