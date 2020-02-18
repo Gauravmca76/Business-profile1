@@ -6,7 +6,11 @@ class PDF extends FPDF
     var $legends;
 	var $wLegend;
 	var $sum;
-	var $NbVal;
+    var $NbVal;
+    function Header()
+    {
+        $this->Image('profilebusiness.png',0,0,210,297);
+    }
 	function PieChart($w, $h, $data, $format, $colors=null)//(100,35)
 	{
 		$this->SetFont('Courier', '', 10);
@@ -229,94 +233,204 @@ class PDF extends FPDF
             ($h - $y3) * $this->k
         ));
     }
+
+    protected $extgstates = array();
+
+    function SetAlpha($alpha, $bm='Normal')
+    {
+        $gs = $this->AddExtGState(array('ca'=>$alpha, 'CA'=>$alpha, 'BM'=>'/'.$bm));
+        $this->SetExtGState($gs);
+    }
+
+    function AddExtGState($parms)
+    {
+        $n = count($this->extgstates)+1;
+        $this->extgstates[$n]['parms'] = $parms;
+        return $n;
+    }
+
+    function SetExtGState($gs)
+    {
+        $this->_out(sprintf('/GS%d gs', $gs));
+    }
+
+    function _enddoc()
+    {
+        if(!empty($this->extgstates) && $this->PDFVersion<'1.4')
+            $this->PDFVersion='1.4';
+        parent::_enddoc();
+    }
+
+    function _putextgstates()
+    {
+        for ($i = 1; $i <= count($this->extgstates); $i++)
+        {
+            $this->_newobj();
+            $this->extgstates[$i]['n'] = $this->n;
+            $this->_put('<</Type /ExtGState');
+            $parms = $this->extgstates[$i]['parms'];
+            $this->_put(sprintf('/ca %.3F', $parms['ca']));
+            $this->_put(sprintf('/CA %.3F', $parms['CA']));
+            $this->_put('/BM '.$parms['BM']);
+            $this->_put('>>');
+            $this->_put('endobj');
+        }
+    }
+
+    function _putresourcedict()
+    {
+        parent::_putresourcedict();
+        $this->_put('/ExtGState <<');
+        foreach($this->extgstates as $k=>$extgstate)
+            $this->_put('/GS'.$k.' '.$extgstate['n'].' 0 R');
+        $this->_put('>>');
+    }
+
+    function _putresources()
+    {
+        $this->_putextgstates();
+        parent::_putresources();
+    }
+    var $angle=0;
+
+function Rotate($angle,$x=-1,$y=-1)
+{
+    if($x==-1)
+        $x=$this->x;
+    if($y==-1)
+        $y=$this->y;
+    if($this->angle!=0)
+        $this->_out('Q');
+    $this->angle=$angle;
+    if($angle!=0)
+    {
+        $angle*=M_PI/180;
+        $c=cos($angle);
+        $s=sin($angle);
+        $cx=$x*$this->k;
+        $cy=($this->h-$y)*$this->k;
+        $this->_out(sprintf('q %.5F %.5F %.5F %.5F %.2F %.2F cm 1 0 0 1 %.2F %.2F cm',$c,$s,-$s,$c,$cx,$cy,-$cx,-$cy));
+    }
+}
+
+function _endpage()
+{
+    if($this->angle!=0)
+    {
+        $this->angle=0;
+        $this->_out('Q');
+    }
+    parent::_endpage();
+}
+function RotatedImage($file,$x,$y,$w,$h,$angle)
+{
+    //Image rotated around its upper-left corner
+    $this->Rotate($angle,$x,$y);
+    $this->Image($file,$x,$y,$w,$h);
+    $this->Rotate(0);
+}
 }
 
 $pdf = new PDF();
 $pdf->AddPage();
-$sql="SELECT * FROM bplan WHERE bemail='demo@gmail.com'";
+$sql="SELECT * FROM bplan WHERE cEmailid='vsh@gmail.com'";
 $result=mysqli_query($conn,$sql);
 $row=mysqli_fetch_array($result);
 $pdf->SetXY(80,5);
 $pdf->SetFont('Times','BI',25);
+$pdf->SetTextColor(0,179,0);
 $pdf->Cell(130,20,'Business Plan',0,0);
-$pdf->SetXY(20,18);
-$pdf->SetFont('Times','I',18);
-$pdf->Cell(130,20,$row['cName'],0,0);
-$pdf->SetXY(20,30);
-$pdf->MultiCell(130,10,$row['cVisionmission']);
-$pdf->SetLineWidth(0.1);
-$pdf->SetDash(2,2); //5mm on, 5mm off
-$pdf->Line(10,43,200,43);
-$pdf->SetXY(18,43);
+$pdf->SetXY(8,18);
+$pdf->SetTextColor(0,0,0);
 $pdf->SetFont('Times','BI',18);
+$pdf->Cell(130,20,$row['cName'],0,0);
+$pdf->SetXY(15,25);
+$pdf->SetTextColor(0,0,0);
+$pdf->SetFont('Times','BI',13);
+$pdf->Cell(130,20,$row['oname'].' , '.$row['cNumber'].' , '.$row['cEmailid'],0,0);
+$pdf->SetXY(60,18);
+$pdf->SetTextColor(0,0,0);
+$pdf->SetFont('Times','I',13);
+$pdf->Cell(130,20,'( '.$row['cBusiness'].' )',0,0);
+$pdf->SetXY(8,37);
+$pdf->SetFont('Times','I',12);
+$pdf->MultiCell(155,7,$row['cVisionmission'],0,1);
+$pdf->Image('bekreta.png',156,10,50,30);
+$pdf->SetLineWidth(0.1);
+$pdf->SetDash(2,2); 
+$pdf->Line(10,52,200,52);
+$pdf->SetXY(18,48);
+$pdf->SetFont('Times','BI',17);
 $pdf->Cell(130,20,'The Market Problem',0,0);
-$prob=json_decode($row['prob']); $x=15;
-$pdf->SetFont('Times','I',15);
+$prob=json_decode($row['prob']); $x=6;
+$pdf->SetFont('Times','I',12);
 for($i=0;$i<count($prob);$i++)
 {
-$pdf->SetXY($x,60);
-$pdf->MultiCell(20,5,$prob[$i],0,0);
-$x+=30;
+$pdf->SetXY($x,63);
+$pdf->MultiCell(18,5,$prob[$i],0,1);
+$x+=28;
 }
-$pdf->SetXY(120,43);
-$pdf->SetFont('Times','BI',18);
+$pdf->SetXY(135,48);
+$pdf->SetFont('Times','BI',17);
 $pdf->Cell(130,20,'How we will solve it',0,0);
-$sol=json_decode($row['sol']); $x=113;
-$pdf->SetFont('Times','I',15);
+$sol=json_decode($row['sol']); 
+$pdf->SetFont('Times','I',12); $x=119;
 for($i=0;$i<count($sol);$i++)
 {
-    $pdf->SetXY($x,60);
-    $pdf->MultiCell(20,5,$sol[$i],0,0);
-    $x+=30;
+    $pdf->SetXY($x,65);
+    $pdf->MultiCell(20,5,$sol[$i],0,1);
+    $x+=22;
 }
 $pdf->SetLineWidth(0.1);
-$pdf->SetDash(2,2); //5mm on, 5mm off
-$pdf->Line(10,73,200,73);
-$pdf->SetXY(20,73);
-$pdf->SetFont('Times','BI',18);
-$pdf->Cell(30,20,'Target Market',0,0);
-$pdf->SetFont('Times','I',15);
-$tar=json_decode($row['tar']); $x=15;
-for($i=0;$i<count($tar);$i++)
+$pdf->SetDash(2,2); 
+$pdf->Line(10,85,200,85);
+$pdf->SetXY(10,83);
+$pdf->SetFont('Times','BI',17);
+$pdf->Cell(30,20,'Company Milestone',0,0);
+$pdf->SetFont('Times','I',12);
+$mname=json_decode($row['mname']); $y=96;
+for($i=0;$i<count($mname);$i++)
 {
-    $pdf->SetXY($x,90);
-    $pdf->MultiCell(20,5,$tar[$i],0,0);
-    $x+=15;
-}
-$pdf->SetXY(77,73);
-$pdf->SetFont('Times','BI',18);
-$pdf->Cell(30,20,'Competitors',0,0);
-$pdf->SetFont('Times','I',15);
-$scname=json_decode($row['swotcname']);  $y=87;
-for($i=0;$i<count($scname);$i++)
-{
-    $pdf->SetXY(77,$y);
-    $pdf->MultiCell(15,10,$scname[$i],0,0);
+    $pdf->SetXY(15,$y);
+    $pdf->MultiCell(25,10,$mname[$i],0,1);
     $y+=8;
 }
-$pdf->SetXY(147,73);
-$pdf->SetFont('Times','BI',18);
-$pdf->Cell(30,20,'Core Team',0,0);
-$emp=json_decode($row['empname']);
-$pdf->SetXY(143,90);
-$pdf->SetFont('Times','I',15);
-$pdf->MultiCell(60,5,'Number of Employees in company:');
-$pdf->SetXY(165,88);
-$pdf->SetFont('Times','I',15);
-$pdf->cell(20,20,count($emp),0,0);
+$pdf->SetXY(80,83);
+$pdf->SetFont('Times','BI',17);
+$pdf->Cell(30,20,'Target Market',0,0);
+$pdf->SetFont('Times','I',12);
+$tar=json_decode($row['tar']); $y=96;
+for($i=0;$i<count($tar);$i++)
+{
+    $pdf->SetXY(84,$y);
+    $pdf->MultiCell(35,10,$tar[$i],0,1);
+    $y+=8;
+}
+$pdf->SetXY(143,83);
+$pdf->SetFont('Times','BI',17);
+$pdf->Cell(30,20,'Competitors',0,0);
+$pdf->SetFont('Times','I',12);
+$scname=json_decode($row['swotcname']);  $y=96;
+for($i=0;$i<count($scname);$i++)
+{
+    $pdf->SetXY(147,$y);
+    $pdf->MultiCell(25,10,$scname[$i],0,1);
+    $y+=8;
+}
 $pdf->SetLineWidth(0.1);
-$pdf->SetDash(2,2); //5mm on, 5mm off
-$pdf->Line(10,123,200,123);
-$pdf->SetXY(80,124);
+$pdf->SetDash(2,2); 
+$pdf->Line(10,133,200,133);
+$pdf->SetXY(80,130);
 $pdf->SetFont('Times','BI',18);
 $pdf->Cell(30,20,'Funding',0,0);
-$pdf->SetXY(25,140);
+$val=number_format(300000,2);
+$pdf->SetXY(25,146);
 $pdf->SetLineWidth(0.1);
-$pdf->SetDash(10,5); //5mm on, 5mm off
-$pdf->SetFont('Times','I',15);
-$pdf->Cell(150,20,'     Funding Needed Rs.',1,0);
+$pdf->SetDash(10,5); 
+$pdf->SetFont('Times','I',28);
+$pdf->Cell(150,20,'   Funding Needed Rs.'.$val,1,0,'L');
 $pdf->SetLineWidth(0.1);
-$pdf->SetDash(2,2); //5mm on, 5mm off
+$pdf->SetDash(2,2); 
 $pdf->Line(10,170,200,170);
 $pdf->SetXY(64,167);
 $pdf->SetFont('Times','BI',18);
@@ -336,7 +450,7 @@ for($i=0;$i<count($salesoln);$i++)
 }
 $valX = round($pdf->GetX());
 $valY = round($pdf->GetY());
-$pdf->SetXY(50,160);
+$pdf->SetXY(60,160);
 $col[0]=array(100,100,255);
 $col[1]=array(255,100,100);
 $col[2]=array(255,255,100);
@@ -378,5 +492,12 @@ $col[10]=array(255,195,18);
 $col[11]=array(87,88,187);
 $pdf->PieChart1(160,160, $data, '%l (%p)', $col);
 $pdf->SetXY($valX, $valY + 10);
-$pdf->Output();
+$pdf->SetLineWidth(1.5);
+$pdf->SetAlpha(0.2);
+$pdf->RotatedImage('bekreta.png',60,160,100,50,55);
+$pdf->SetAlpha(1);
+$pdf->SetLineWidth(0.1);
+$pdf->SetDash(2,2); 
+$pdf->Line(115,52,115,85);
+$pdf->Output('I','Business Plan');
 ?>
