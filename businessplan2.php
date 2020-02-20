@@ -1,17 +1,20 @@
 <?php
-require('database1.php');
+
 require('fpdf/fpdf.php');
+require('database1.php');
+
 class PDF extends FPDF
 {
     var $legends;
 	var $wLegend;
 	var $sum;
     var $NbVal;
+    
     function Header()
     {
-        $this->Image('bp1.jpg',0,0,210,297);
+        $this->Image('bp2.png',0,0,210,297);
     }
-	function PieChart($w, $h, $data, $format, $colors=null)//(100,35)
+    function PieChart($w, $h, $data, $format, $colors=null)//(100,35)
 	{
 		$this->SetFont('Courier', '', 10);
         $this->SetLegends($data,$format);
@@ -57,8 +60,7 @@ class PDF extends FPDF
             $y1+=$hLegend + $margin;
         }
     }
-
-    function PieChart1($w, $h, $data, $format, $colors=null)//(100,35)
+    function PieChart1($w, $h, $data, $format, $colors=null)
 	{
 		$this->SetFont('Courier', '', 10);
         $this->SetLegends($data,$format);
@@ -98,13 +100,12 @@ class PDF extends FPDF
         $y1 = $YDiag - $radius + (2 * $radius - $this->NbVal*($hLegend + $margin)) / 2;
         for($i=0; $i<$this->NbVal; $i++) {
             $this->SetFillColor($colors[$i][0],$colors[$i][1],$colors[$i][2]);
-            $this->Rect($x1-145, $y1+56, $hLegend, $hLegend, 'F');
-            $this->SetXY($x2-145,$y1+56);
+            $this->Rect($x1-145, $y1+55, $hLegend, $hLegend, 'F');
+            $this->SetXY($x2-145,$y1+55);
             $this->Cell(0,$hLegend,$this->legends[$i]);
             $y1+=$hLegend + $margin;
         }
     }
-
     function SetLegends($data, $format)
 	{
 		$this->legends=array();
@@ -118,14 +119,6 @@ class PDF extends FPDF
 			$this->legends[]=$legend;
             $this->wLegend=max($this->GetStringWidth($legend),$this->wLegend);
         }
-    }
-    function SetDash($black=null, $white=null)
-    {
-        if($black!==null)
-            $s=sprintf('[%.3F %.3F] 0 d',$black*$this->k,$white*$this->k);
-        else
-            $s='[] 0 d';
-        $this->_out($s);
     }
     function Sector($xc, $yc, $r, $a, $b, $style='FD', $cw=true, $o=90)
 	{
@@ -233,7 +226,6 @@ class PDF extends FPDF
             ($h - $y3) * $this->k
         ));
     }
-
     protected $extgstates = array();
 
     function SetAlpha($alpha, $bm='Normal')
@@ -330,203 +322,190 @@ function RotatedImage($file,$x,$y,$w,$h,$angle)
     $this->Rotate(0);
 }
 }
+
 $pdf= new PDF();
+$sql="SELECT * FROM bplan WHERE bemail='demo@gmail.com'";
+$result=mysqli_query($conn,$sql);
+$row=mysqli_fetch_array($result);
 $pdf->AddPage();
+$pdf->SetXY(70,0);
+$pdf->SetFont('Times','BI',30);
+$pdf->Cell(30,20,'BUSINESS PLAN',0,0);
+$pdf->Image('bekreta.png',5,20,60,20);
+$pdf->SetXY(136,14);
+$pdf->SetFont('Times','BI',14);
+$pdf->Cell(30,20,$row['cName'],0,0);
+$pdf->SetXY(177,14);
+$pdf->SetFont('Times','I',14);
+$pdf->Cell(30,20,'( '.$row['cBusiness'].' )',0,0);
+$pdf->SetXY(136,20);
+$pdf->SetFont('Times','I',14);
+$pdf->Cell(30,20,$row['cLocation'],0,0);
+$pdf->SetXY(136,27);
+$pdf->SetFont('Times','I',14);
+$pdf->Cell(30,20,$row['cNumber'],0,0);
+$pdf->SetXY(136,32);
+$pdf->SetFont('Times','I',14);
+$pdf->Cell(30,20,$row['cEmailid'],0,0);
+$pdf->SetXY(10,50);
+$pdf->SetFont('Times','BI',19);
+$pdf->Cell(30,20,'PROBLEMS:',0,0);
+$prob=json_decode($row['prob']); $a=1;  $y=65;
+for($i=0;$i<count($prob);$i++)
+{
+    $pdf->SetXY(10,$y);
+    $pdf->SetFont('Times','I',13);
+    $pdf->MultiCell(100,5,'Problem '.$a.' :'.$prob[$i],0,1);
+    $a++;  $y+=15;
+}
+$pdf->SetXY(150,50);
+$pdf->SetFont('Times','BI',19);
+$pdf->Cell(30,20,'SOLUTIONS:',0,0);
+$sol=json_decode($row['sol']); $b=1;  $y=65;
+for($i=0;$i<count($sol);$i++)
+{
+    $pdf->SetXY(109,$y);
+    $pdf->SetFont('Times','I',13);
+    $pdf->MultiCell(100,5,'Soluation '.$b.' :'.$sol[$i],0,1);
+    $b++;  $y+=17;
+}
+$pdf->SetXY(70,105);
+$pdf->SetFont('Times','BI',20);
+$pdf->Cell(30,10,'SALES SUMMARY',0,0);
+$pdf->SetXY(10,115);
+$pdf->SetFont('Times','BI',15);
+$pdf->Cell(30,10,'Online Sales (in %)',0,0);
+$sql1="SELECT * FROM sales WHERE bemail='demo@gmail.com'";
+$result1=mysqli_query($conn,$sql1);
+$row1=mysqli_fetch_array($result1);
+$salesoln=json_decode($row1['salesoln']);
+$salesol=json_decode($row1['salesol']);
+$data1=array();
+for($i=0;$i<count($salesoln);$i++)
+{
+    $data1[$salesoln[$i]] = $salesol[$i];    
+}
+$valX = round($pdf->GetX());
+$valY = round($pdf->GetY());
+$pdf->SetXY(55,90);
+$col[0]=array(100,100,255);
+$col[1]=array(255,100,100);
+$col[2]=array(255,255,100);
+$col[3]=array(63, 81, 181);
+$col[4]=array(205, 220, 57);
+$col[5]=array(139, 195, 74);
+$col[6]=array(255, 152, 0);
+$col[7]=array(53, 59, 72);
+$col[8]=array(111, 30, 81);
+$col[9]=array(0, 98, 102);
+$col[10]=array(255,195,18);
+$col[11]=array(87,88,187);
+$pdf->PieChart(150,90, $data1, '%l (%p)', $col);
+$pdf->SetXY($valX, $valY + 10);
+$pdf->SetXY(155,115);
+$pdf->SetFont('Times','BI',15);
+$pdf->Cell(30,10,'Offline Sales (in %)',0,0);
+$salesofn=json_decode($row1['salesofn']);
+$salesof=json_decode($row1['salesof']);
+$data1=array();
+for($i=0;$i<count($salesofn);$i++)
+{
+    $data11[$salesofn[$i]] = $salesof[$i];    
+}
+$valX = round($pdf->GetX());
+$valY = round($pdf->GetY());
+$pdf->SetXY(200,90);
+$col[0]=array(100,100,255);
+$col[1]=array(255,100,100);
+$col[2]=array(255,255,100);
+$col[3]=array(63, 81, 181);
+$col[4]=array(205, 220, 57);
+$col[5]=array(139, 195, 74);
+$col[6]=array(255, 152, 0);
+$col[7]=array(53, 59, 72);
+$col[8]=array(111, 30, 81);
+$col[9]=array(0, 98, 102);
+$col[10]=array(255,195,18);
+$col[11]=array(87,88,187);
+$pdf->PieChart1(150,90, $data11, '%l (%p)', $col);
+$pdf->SetXY($valX, $valY + 10);
+$pdf->SetXY(70,200);
+$pdf->SetFont('Times','BI',20);
+$pdf->Cell(30,20,'TARGET MARKETS',0,0);
+$tar=json_decode($row['tar']);   $c=1; $x=10;
+for($i=0;$i<count($tar);$i++)
+{
+    $pdf->SetXY($x,215);
+    $pdf->SetFont('Times','I',15);
+    $pdf->Cell(30,10,$c." . ".$tar[$i],0,0);
+    $c++;  $x+=35;
+}
+$pdf->SetXY(70,225);
+$pdf->SetFont('Times','BI',20);
+$pdf->Cell(30,20,'COMPETITORS',0,0);
+$comp=json_decode($row['swotcname']);  $d=1;  $x=10;     
+for($i=0;$i<count($comp);$i++)  
+{
+    $pdf->SetXY($x,240);
+    $pdf->SetFont('Times','I',15);
+    $pdf->Cell(30,10,$d." . ".$comp[$i],0,0);
+    $d++;  $x+=35;
+}
+$pdf->SetXY(8,253);
+$pdf->SetFont('Times','',20);
+$pdf->SetFillColor(255,127,80);
+$pdf->Cell(190,10,'',0,0,'',true);
+$pdf->SetXY(8,254);
+$pdf->SetFont('Times','',13);
+$pdf->SetTextColor(0,0,0);
+$pdf->Cell(30,10,'FINANCIALS (000 Rs.)',0,0);
+$pdf->SetXY(78,254);
+$pdf->SetFont('Times','',13);
+$pdf->SetTextColor(0,0,0);
+$pdf->Cell(30,10,'Year 1',0,0);
+$pdf->SetXY(122,254);
+$pdf->SetFont('Times','',13);
+$pdf->SetTextColor(0,0,0);
+$pdf->Cell(30,10,'Year 2',0,0);
+$pdf->SetXY(172,254);
+$pdf->SetFont('Times','',13);
+$pdf->SetTextColor(0,0,0);
+$pdf->Cell(30,10,'Year 3',0,0);
+$pdf->SetXY(12,265);
+$pdf->SetFont('Times','',13);
+$pdf->SetTextColor(0,0,0);
+$pdf->Cell(30,2,'REVENUES',0,0);
+$pdf->SetXY(12,272);
+$pdf->SetFont('Times','',13);
+$pdf->SetTextColor(0,0,0);
+$pdf->Cell(30,2,'EXPENSES',0,0);
+$pdf->SetXY(78,265);
+$pdf->SetFont('Times','',13);
+$pdf->SetTextColor(0,0,0);
+$pdf->Cell(30,3,$row['revenue1'],0,0);
+$pdf->SetXY(122,265);
+$pdf->SetFont('Times','',13);
+$pdf->SetTextColor(0,0,0);
+$pdf->Cell(30,3,$row['revenue2'],0,0);
+$pdf->SetXY(172,265);
+$pdf->SetFont('Times','',13);
+$pdf->SetTextColor(0,0,0);
+$pdf->Cell(30,3,$row['revenue3'],0,0);
+$pdf->SetXY(78,272);
+$pdf->SetFont('Times','',13);
+$pdf->SetTextColor(0,0,0);
+$pdf->Cell(30,3,$row['expense1'],0,0);
+$pdf->SetXY(122,272);
+$pdf->SetFont('Times','',13);
+$pdf->SetTextColor(0,0,0);
+$pdf->Cell(30,3,$row['expense2'],0,0);
+$pdf->SetXY(172,272);
+$pdf->SetFont('Times','',13);
+$pdf->SetTextColor(0,0,0);
+$pdf->Cell(30,3,$row['expense3'],0,0);
 $pdf->SetLineWidth(1.5);
 $pdf->SetAlpha(0.2);
 $pdf->RotatedImage('bekreta.png',60,160,100,50,55);
 $pdf->SetAlpha(1);
-$sql="SELECT * FROM bplan where bemail='demo@gmail.com'";
-$result=mysqli_query($conn,$sql);
-$row=mysqli_fetch_array($result);
-$pdf->Image('bekreta.png',10,10,50,30);
-$pdf->SetXY(100,1);
-$pdf->SetFont('Times','BI',30);
-$pdf->SetTextColor(77,77,255);
-$pdf->Cell(30,20,'Business Plan',0,0);
-$pdf->SetXY(90,20);
-$pdf->SetFont('Times','BI',30);
-$pdf->SetTextColor(0,0,0);
-$pdf->Cell(30,20,$row['cName'],0,0);
-$pdf->SetXY(115,29);
-$pdf->SetFont('Times','I',15);
-$pdf->Cell(30,20,'( '.$row['cBusiness'].' )',0,0);
-$pdf->SetXY(7,40);
-$pdf->SetFont('Times','BUI',13);
-$pdf->SetTextColor(255,255,255);
-$pdf->Cell(30,20,'CONTACT INFORMATION',0,0); 
-$pdf->SetXY(13,48);
-$pdf->SetFont('Times','BI',13);
-$pdf->Cell(30,20,$row['cName'],0,0);
-$pdf->SetXY(5,58);
-$pdf->SetFont('Times','I',13);
-$pdf->Cell(30,20,'Location: ',0,0);
-$pdf->SetXY(25,58);
-$pdf->SetFont('Times','I',13);
-$pdf->Cell(30,20,$row['cLocation'],0,0);
-$pdf->SetXY(5,68);
-$pdf->SetFont('Times','I',13);
-$pdf->Cell(30,20,'contact number: ',0,0);
-$pdf->SetXY(36,68);
-$pdf->SetFont('Times','I',13);
-$pdf->Cell(30,20,$row['cNumber'],0,0);
-$pdf->SetXY(5,78);
-$pdf->SetFont('Times','I',12);
-$pdf->Cell(30,20,'Email: ',0,0);
-$pdf->SetXY(17,78);
-$pdf->SetFont('Times','I',11);
-$pdf->Cell(30,20,$row['cEmailid'],0,0);
-$pdf->SetXY(7,89);
-$pdf->SetFont('Times','BUI',12);
-$pdf->SetTextColor(255,255,255);
-$pdf->Cell(30,20,'FINANCIAL INFORMATION',0,0);
-$pdf->SetXY(5,95);
-$pdf->SetFont('Times','BI',12);
-$pdf->Cell(30,20,'Company Stage: ',0,0);
-$pdf->SetXY(35,95);
-$pdf->SetFont('Times','I',12);
-$pdf->Cell(30,20,$row['cStage'],0,0);
-$capital=$row['capital1'] + $row['capital2'] + $row['capital3'];//sum of capital
-$pdf->SetXY(5,103);
-$pdf->SetFont('Times','BI',12);
-$pdf->Cell(30,20,'Capital: ',0,0);
-$pdf->SetXY(20,103);
-$pdf->SetFont('Times','I',12);
-$pdf->Cell(30,20,'Rs. '.number_format($capital,2),0,0);
-$invesment=$row['investment1'] + $row['investment2'] + $row['investment3'];//sum of investment
-$pdf->SetXY(5,110);
-$pdf->SetFont('Times','BI',12);
-$pdf->Cell(30,20,'Capital Seeking: ',0,0);
-$pdf->SetXY(35,110);
-$pdf->SetFont('Times','I',12);
-$pdf->Cell(30,20,'Rs. '.number_format($invesment,2),0,0);
-$pdf->SetXY(7,122);
-$pdf->SetFont('Times','BUI',15);
-$pdf->SetTextColor(255,255,255);
-$pdf->Cell(30,20,'MANAGEMENT TEAM',0,0);
-$pdf->SetXY(7,128);
-$pdf->SetFont('Times','BI',13);
-$pdf->Cell(30,20,'CEO & Founder: ',0,0);
-$pdf->SetXY(7,142);
-$pdf->SetFont('Times','I',13);
-$pdf->MultiCell(48,5,$row['oname'].' ,',0,0);
-$pdf->SetXY(6,147);
-$pdf->SetFont('Times','I',13);
-$pdf->MultiCell(17,5,$row['yexp'].' years',0,0);
-$pdf->SetXY(22,148);
-$pdf->SetFont('Times','I',13);
-$pdf->MultiCell(19,5,$row['mexp'].' months',0,0);
-$pdf->SetXY(39,148);
-$pdf->SetFont('Times','I',13);
-$pdf->MultiCell(28,5,' experiance in ',0,0);
-$pdf->SetXY(5,151);
-$pdf->SetFont('Times','I',13);
-$pdf->MultiCell(41,10,$row['cIndustry'],0,0);
-$pdf->SetXY(33,151);
-$pdf->SetFont('Times','I',13);
-$pdf->MultiCell(23,10,' in a ',0,0);
-$pdf->SetXY(5,157);
-$pdf->SetFont('Times','I',13);
-$pdf->MultiCell(28,10,$row['cBusiness'].' .',0,0);
-$pdf->SetXY(75,50);
-$pdf->SetTextColor(0,0,0);
-$pdf->SetFont('Times','BI',30);
-$pdf->Cell(30,20,'Mission: ',0,0);
-$pdf->SetXY(75,66);
-$pdf->SetFont('Times','I',12);
-$pdf->MultiCell(125,10,$row['cVisionmission'],0,1);
-$pdf->SetXY(70,95);
-$pdf->SetTextColor(0,0,0);
-$pdf->SetFont('Times','BI',30);
-$pdf->Cell(30,20,'Problems: ',0,0);
-$prob=json_decode($row['prob']); $a=1;  $y=110;
-for($i=0;$i<2;$i++)
-{
-    $pdf->SetXY(70,$y);
-    $pdf->SetFont('Times','I',14);
-    $pdf->MultiCell(60,10,$a.". ".$prob[$i],0,1);
-    $a++; $y+=10;
-}
-$pdf->SetXY(152,95);
-$pdf->SetTextColor(0,0,0);
-$pdf->SetFont('Times','BI',30);
-$pdf->Cell(30,20,'Solutions: ',0,0);
-$sol=json_decode($row['sol']);  $b=1;  $y=110;
-for($i=0;$i<count($sol);$i++)
-{
-    $pdf->SetXY(150,$y);
-    $pdf->SetFont('Times','I',14);
-    $pdf->MultiCell(60,10,$b.". ".$sol[$i],0,1);
-    $b++;  $y+=10;
-}
-$pdf->SetXY(68,150);
-$pdf->SetTextColor(0,0,0);
-$pdf->SetFont('Times','BI',27);
-$pdf->Cell(30,20,'Target Markets: ',0,0);
-$tar=json_decode($row['tar']); $c=1; $y=165;
-for($i=0;$i<count($tar);$i++)
-{
-    $pdf->SetXY(70,$y);
-    $pdf->SetFont('Times','I',14);
-    $pdf->MultiCell(60,10,$c.". ".$tar[$i],0,1);
-    $c++;  $y+=10;
-}
-$pdf->SetXY(148,150);
-$pdf->SetTextColor(0,0,0);
-$pdf->SetFont('Times','BI',27);
-$pdf->Cell(30,20,'Competitors: ',0,0);
-$comp=json_decode($row['swotcname']); $d=1;  $y=165;
-for($i=0;$i<count($comp);$i++)
-{
-    $pdf->SetXY(150,$y);
-    $pdf->SetFont('Times','I',14);
-    $pdf->MultiCell(60,10,$d.". ".$comp[$i],0,1);
-    $d++;  $y+=10;
-}
-$var=3000000;
-$pdf->SetXY(70,225);
-$pdf->SetFont('Times','I',20);
-$pdf->Cell(120,20,'  Funding Needed Rs.'.number_format($var,2),1,0,'C');
-$pdf->SetXY(70,250);
-$pdf->SetFillColor(77,77,255);
-$pdf->Cell(135,8,'',0,0,'',true);
-$pdf->SetXY(73,250);
-$pdf->SetTextColor(255,255,255);
-$pdf->SetFont('Times','I',12);
-$pdf->Cell(30,10,'FINANCIALS(000  Rs.)',0,0);
-$pdf->SetXY(123,250);
-$pdf->SetFont('Times','I',11);
-$pdf->Cell(30,10,'Year 1',0,0);
-$pdf->SetXY(155,250);
-$pdf->SetFont('Times','I',11);
-$pdf->Cell(30,10,'Year 2',0,0);
-$pdf->SetXY(190,250);
-$pdf->SetFont('Times','I',11);
-$pdf->Cell(30,10,'Year 3',0,0);
-$pdf->SetXY(73,258);
-$pdf->SetTextColor(0,0,0);
-$pdf->SetFont('Times','I',12);
-$pdf->Cell(30,10,'REVENUES',0,0);
-$pdf->SetXY(73,266);
-$pdf->SetFont('Times','I',12);
-$pdf->Cell(30,10,'EXPENESS',0,0);
-$pdf->SetXY(123,258);
-$pdf->SetFont('Times','I',12);
-$pdf->Cell(30,10,$row['revenue1'],0,0);
-$pdf->SetXY(155,258);
-$pdf->SetFont('Times','I',12);
-$pdf->Cell(30,10,$row['revenue2'],0,0);
-$pdf->SetXY(190,258);
-$pdf->SetFont('Times','I',12);
-$pdf->Cell(30,10,$row['revenue3'],0,0);
-$pdf->SetXY(123,266);
-$pdf->SetFont('Times','I',12);
-$pdf->Cell(30,10,$row['expense1'],0,0);
-$pdf->SetXY(155,266);
-$pdf->SetFont('Times','I',12);
-$pdf->Cell(30,10,$row['expense2'],0,0);
-$pdf->SetXY(190,266);
-$pdf->SetFont('Times','I',12);
-$pdf->Cell(30,10,$row['expense`3'],0,0);
-$pdf->Output();
+$pdf->Output('I','Business Plan');
 ?>
